@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
-    "gopkg.in/amz.v1/aws"
-  	"gopkg.in/amz.v1/s3"
+    "github.com/mitchellh/goamz/aws"
+  	"github.com/mitchellh/goamz/s3"
 )
 
 type S3OutputConfig struct {
@@ -30,7 +30,7 @@ func (so *S3Output) ConfigStruct() interface{} {
 
 func (so *S3Output) Init(config interface{}) (err error) {
 	so.config = config.(*S3OutputConfig)
-	auth, err := aws.Auth{AccessKey: so.config.AccessKey, SecretKey: so.config.SecretKey}
+	auth, err := aws.GetAuth(so.config.AccessKey, so.config.SecretKey)
 	if err != nil {
 		return
 	}
