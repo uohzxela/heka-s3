@@ -2,7 +2,7 @@ package s3
 
 import (
 	"fmt"
-	"error"
+	"errors"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
     "gopkg.in/amz.v1/aws"
