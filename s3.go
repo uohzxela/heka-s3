@@ -8,7 +8,6 @@ import (
 	. "github.com/mozilla-services/heka/pipeline"
     "gopkg.in/amz.v1/aws"
   	"gopkg.in/amz.v1/s3"
-
 )
 
 type S3OutputConfig struct {
