@@ -6,8 +6,8 @@ import (
 	"strings"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
-    "github.com/mitchellh/goamz/aws"
-  	"github.com/mitchellh/goamz/s3"
+    "gopkg.in/amz.v1/aws"
+  	"gopkg.in/amz.v1/s3"
 
 )
 
