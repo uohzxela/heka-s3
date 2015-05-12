@@ -2,8 +2,6 @@ package s3
 
 import (
 	"fmt"
-	"errors"
-	"strings"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
     "gopkg.in/amz.v1/aws"
@@ -35,11 +33,12 @@ func (so *S3Output) Init(config interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	so.client = s3.New(auth, so.config.Region)
-	resp, err := so.client.ListBuckets()
-	if err != nil {
+	region, ok := aws.Regions[so.config.Region]
+	if !ok {
+		err = errors.New("Region of that name not found.")
 		return
 	}
+	so.client = s3.New(auth, region)
   	so.bucket = so.client.Bucket(so.config.BucketName)
 	return
 }
