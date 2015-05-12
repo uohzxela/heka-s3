@@ -6,7 +6,7 @@ import (
 	"strings"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
-    "github.com/mitchellh/goamz/aws"
+    	"github.com/mitchellh/goamz/aws"
   	"github.com/mitchellh/goamz/s3"
 
 )
