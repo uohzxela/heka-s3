@@ -51,7 +51,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 
 	for pack = range inChan {
 		msg = pack.Message
-		err = so.bucket.Put(so.config.PathName, []byte(msg.getPayload()), "text/plain", "public-read")
+		err = so.bucket.Put(so.config.PathName, []byte(msg.GetPayload()), "text/plain", "public-read")
 		if err != nil {
 			or.LogMessage(fmt.Sprintf("warning, unable to parse payload: %s", err))
 			err = nil
