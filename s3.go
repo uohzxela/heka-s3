@@ -58,16 +58,18 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 
 	var pack *PipelinePack
 	var msg *message.Message
-
+// uploadLoop:
 	for {
 		select {
 		case <- so.stopChan:
-			break
+			or.LogMessage("shutting down AWS S3 output runner")
+			return
 		case <- tickerChan:
 			for pack = range inChan {
 				msg = pack.Message
 				_, err := buffer.Write([]byte(msg.GetPayload()))
 				if err != nil {
+					or.LogMessage(fmt.Sprintf("buffer full, uploading messages"))
 					err := so.Upload(buffer)
 					if err != nil {
 						or.LogMessage(fmt.Sprintf("warning, unable to upload payload when buffer is full: %s", err))
@@ -79,6 +81,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				}
 				pack.Recycle()
 			}
+			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
 			err := so.Upload(buffer)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to upload payload after ticker: %s", err))
@@ -88,8 +91,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 		}
 	}
 
-	or.LogMessage("shutting down AWS S3 output runner")
-	return
+
 }
 
 func (so *S3Output) Stop() {
@@ -97,6 +99,10 @@ func (so *S3Output) Stop() {
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
+	if buffer.Len() == 0 {
+		err = errors.New("buffer is empty")
+		return
+	}
 	t := time.Now().Local().Format("20060102150405")
 	path := so.config.PathName + "/" + t 
 	err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
