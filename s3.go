@@ -26,7 +26,7 @@ type S3Output struct {
 	config *S3OutputConfig
 	client *s3.S3
 	bucket *s3.Bucket
-	// stopChan chan bool
+	stopChan chan bool
 }
 
 func (so *S3Output) ConfigStruct() interface{} {
@@ -52,28 +52,35 @@ func (so *S3Output) Init(config interface{}) (err error) {
 func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
-	// so.stopChan = make(chan bool)
+	so.stopChan = make(chan bool)
 	buf := make([]byte, so.config.MaxBufferSize * 1024)
 	buffer := bytes.NewBuffer(buf)
 
 	var pack *PipelinePack
 	var msg *message.Message
 // uploadLoop:
-	for pack = range inChan {
-		msg = pack.Message
-		_, err := buffer.Write([]byte(msg.GetPayload()))
-		if err != nil {
-			or.LogMessage(fmt.Sprintf("buffer full, uploading messages"))
-			err := so.Upload(buffer)
-			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to upload payload when buffer is full: %s", err))
-				err = nil
-				continue
-			}
-			// pack.Recycle()
-		}
+	for {
 		select {
+		case <- so.stopChan:
+			or.LogMessage("shutting down AWS S3 output runner")
+			return
 		case <- tickerChan:
+			for pack = range inChan {
+				msg = pack.Message
+				_, err := buffer.Write([]byte(msg.GetPayload()))
+				if err != nil {
+					or.LogMessage(fmt.Sprintf("buffer full, uploading messages"))
+					err := so.Upload(buffer)
+					if err != nil {
+						or.LogMessage(fmt.Sprintf("warning, unable to upload payload when buffer is full: %s", err))
+						err = nil
+						continue
+					}
+					// pack.Recycle()
+					break
+				}
+				// pack.Recycle()
+			}
 			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
 			err := so.Upload(buffer)
 			if err != nil {
@@ -82,47 +89,14 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				continue
 			}
 		}
-		// pack.Recycle()
 	}
-	return
-	// for {
-	// 	select {
-	// 	case <- so.stopChan:
-	// 		or.LogMessage("shutting down AWS S3 output runner")
-	// 		return
-	// 	case <- tickerChan:
-	// 		for pack = range inChan {
-	// 			msg = pack.Message
-	// 			_, err := buffer.Write([]byte(msg.GetPayload()))
-	// 			if err != nil {
-	// 				or.LogMessage(fmt.Sprintf("buffer full, uploading messages"))
-	// 				err := so.Upload(buffer)
-	// 				if err != nil {
-	// 					or.LogMessage(fmt.Sprintf("warning, unable to upload payload when buffer is full: %s", err))
-	// 					err = nil
-	// 					continue
-	// 				}
-	// 				pack.Recycle()
-	// 				break
-	// 			}
-	// 			pack.Recycle()
-	// 		}
-	// 		or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
-	// 		err := so.Upload(buffer)
-	// 		if err != nil {
-	// 			or.LogMessage(fmt.Sprintf("warning, unable to upload payload after ticker: %s", err))
-	// 			err = nil
-	// 			continue
-	// 		}
-	// 	}
-	// }
 
 
 }
 
-// func (so *S3Output) Stop() {
-// 	so.stopChan <- true
-// }
+func (so *S3Output) Stop() {
+	so.stopChan <- true
+}
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	if buffer.Len() == 0 {
