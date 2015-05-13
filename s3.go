@@ -72,7 +72,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			}
 			// pack.Recycle()
 		}
-		if tickerChan {
+		if <- tickerChan {
 			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
 			err := so.Upload(buffer)
 			if err != nil {
@@ -83,7 +83,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 		}
 		// pack.Recycle()
 	}
-
+	return
 	// for {
 	// 	select {
 	// 	case <- so.stopChan:
