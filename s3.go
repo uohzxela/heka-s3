@@ -76,10 +76,10 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 						err = nil
 						continue
 					}
-					// pack.Recycle()
+					pack.Recycle()
 					break
 				}
-				// pack.Recycle()
+				pack.Recycle()
 			}
 			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
 			err := so.Upload(buffer)
