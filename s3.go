@@ -7,8 +7,8 @@ import (
 	"time"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
-    "github.com/mitchellh/goamz/aws"
-  	"github.com/mitchellh/goamz/s3"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/s3"
 )
 
 type S3OutputConfig struct {
@@ -45,7 +45,7 @@ func (so *S3Output) Init(config interface{}) (err error) {
 		return
 	}
 	so.client = s3.New(auth, region)
-  	so.bucket = so.client.Bucket(so.config.BucketName)
+	so.bucket = so.client.Bucket(so.config.BucketName)
 	return
 }
 
