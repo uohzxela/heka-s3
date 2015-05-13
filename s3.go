@@ -93,7 +93,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 }
 
 func (so *S3Output) Stop() {
-	stopChan <- true
+	so.stopChan <- true
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
