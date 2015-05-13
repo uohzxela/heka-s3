@@ -59,12 +59,10 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	var pack *PipelinePack
 	var msg *message.Message
 
-	ok := true
-
-	for ok {
+	for {
 		select {
-		case _, ok = <- so.stopChan:
-			continue
+		case <- so.stopChan:
+			break
 		case <- tickerChan:
 			for pack = range inChan {
 				msg = pack.Message
@@ -95,7 +93,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 }
 
 func (so *S3Output) Stop() {
-	close(so.stopChan)
+	stopChan <- true
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
