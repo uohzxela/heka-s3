@@ -68,7 +68,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 		case <- tickerChan:
 			for pack = range inChan {
 				msg = pack.Message
-				n, err := buffer.Write([]byte(msg.GetPayload()))
+				_, err := buffer.Write([]byte(msg.GetPayload()))
 				if err != nil {
 					err := so.Upload(buffer)
 					if err != nil {
