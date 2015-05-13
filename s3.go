@@ -72,7 +72,8 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			}
 			// pack.Recycle()
 		}
-		if <- tickerChan {
+		select {
+		case <- tickerChan:
 			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
 			err := so.Upload(buffer)
 			if err != nil {
