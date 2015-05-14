@@ -68,13 +68,14 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			// or.LogMessage(fmt.Sprintf("writing to buffer"))
+			or.LogMessage(fmt.Sprintf("writing to buffer"))
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
 				err = nil
 				continue
 			}
+			pack.Recycle()
 		case <- tickerChan:
 			or.LogMessage(fmt.Sprintf("ticker time's up, uploading payload"))
 			err := so.Upload(buffer)
@@ -86,7 +87,6 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			or.LogMessage(fmt.Sprintf("payload uploaded successfully"))
 			buffer.Reset()
 		}
-		pack.Recycle()
 	}
 	or.LogMessage(fmt.Sprintf("shutting down s3 output runner"))
 	return
