@@ -18,8 +18,7 @@ type S3OutputConfig struct {
 	BucketName string `toml:"bucket_name"`
 	PathName string `toml:"path_name"`
 	TickerInterval uint `toml:"ticker_interval"`
-	// MaxBufferSize uint32 `toml:"max_buffer_size"`
-
+	MaxBufferSize uint32 `toml:"max_buffer_size"`
 }
 
 type S3Output struct {
@@ -51,18 +50,26 @@ func (so *S3Output) Init(config interface{}) (err error) {
 func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
-	// buf := make([]byte, so.config.MaxBufferSize * 1024)
-	// buffer := bytes.NewBuffer(buf)
+	buf := make([]byte, so.config.MaxBufferSize * 1024)
+	buffer := bytes.NewBuffer(buf)
 
 	var (
 		pack    *PipelinePack
 		msg     *message.Message
-		buffer  *bytes.Buffer
 		ok      = true
 	)
 
 	for ok {
 		select {
+
+		case <- tickerChan:
+			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
+			err := so.Upload(buffer)
+			if err != nil {
+				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
+				err = nil
+				continue
+			}
 		case pack, ok = <- inChan:
 			if !ok {
 				break
@@ -72,14 +79,6 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
-				err = nil
-				continue
-			}
-		case <- tickerChan:
-			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
-			err := so.Upload(buffer)
-			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
 				err = nil
 				continue
 			}
