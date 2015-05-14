@@ -61,15 +61,6 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 
 	for ok {
 		select {
-
-		case <- tickerChan:
-			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
-			err := so.Upload(buffer)
-			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
-				err = nil
-				continue
-			}
 		case pack, ok = <- inChan:
 			if !ok {
 				break
@@ -82,6 +73,15 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				err = nil
 				continue
 			}
+		case <- tickerChan:
+			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
+			err := so.Upload(buffer)
+			if err != nil {
+				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
+				err = nil
+				continue
+			}
+
 		}
 		pack.Recycle()
 	}
