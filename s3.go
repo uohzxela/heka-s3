@@ -99,7 +99,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	}
 	t := time.Now().Local().Format("20060102150405")
 	path := so.config.PathName + "/" + t 
-	err = so.bucket.Put(path, string(buffer.Bytes()), "text/plain", "public-read")
+	err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
 	return
 }
 
