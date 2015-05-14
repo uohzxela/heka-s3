@@ -5,6 +5,7 @@ import (
 	"errors"
 	"bytes"
 	"time"
+	"compress/gzip"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
 	"github.com/mitchellh/goamz/aws"
@@ -96,9 +97,15 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 		err = errors.New("buffer is empty")
 		return
 	}
+
+	var buf bytes.Buffer
+	writer := gzip.NewWriter(&buf)
+	writer.Write(buffer.Bytes())
+	writer.Close()
+	
 	t := time.Now().Local().Format("20060102150405")
 	path := so.config.PathName + "/" + t 
-	err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
+	err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
 	return
 }
 
