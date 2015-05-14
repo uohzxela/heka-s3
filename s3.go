@@ -18,7 +18,8 @@ type S3OutputConfig struct {
 	BucketName string `toml:"bucket_name"`
 	PathName string `toml:"path_name"`
 	TickerInterval uint `toml:"ticker_interval"`
-	MaxBufferSize uint32 `toml:"max_buffer_size"`
+	// MaxBufferSize uint32 `toml:"max_buffer_size"`
+
 }
 
 type S3Output struct {
@@ -50,12 +51,13 @@ func (so *S3Output) Init(config interface{}) (err error) {
 func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
-	buf := make([]byte, so.config.MaxBufferSize * 1024)
-	buffer := bytes.NewBuffer(buf)
+	// buf := make([]byte, so.config.MaxBufferSize * 1024)
+	buffer := bytes.NewBuffer(nil)
 
 	var (
 		pack    *PipelinePack
 		msg     *message.Message
+		// buffer  *bytes.Buffer
 		ok      = true
 	)
 
@@ -66,7 +68,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			or.LogMessage(fmt.Sprintf("writing to buffer"))
+			// or.LogMessage(fmt.Sprintf("writing to buffer"))
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
@@ -74,14 +76,15 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				continue
 			}
 		case <- tickerChan:
-			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
+			or.LogMessage(fmt.Sprintf("ticker time's up, uploading payload"))
 			err := so.Upload(buffer)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
 				err = nil
 				continue
 			}
-
+			or.LogMessage(fmt.Sprintf("payload uploaded successfully"))
+			buffer.Reset()
 		}
 		pack.Recycle()
 	}
@@ -96,8 +99,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	}
 	t := time.Now().Local().Format("20060102150405")
 	path := so.config.PathName + "/" + t 
-	err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
-	buffer.Reset()
+	err = so.bucket.Put(path, string(buffer.Bytes()), "text/plain", "public-read")
 	return
 }
 
