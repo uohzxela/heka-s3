@@ -68,7 +68,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			or.LogMessage(fmt.Sprintf("writing to buffer")
+			or.LogMessage(fmt.Sprintf("writing to buffer"))
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
