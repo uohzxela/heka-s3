@@ -18,7 +18,7 @@ type S3OutputConfig struct {
 	BucketName string `toml:"bucket_name"`
 	PathName string `toml:"path_name"`
 	TickerInterval uint `toml:"ticker_interval"`
-	MaxBufferSize uint32 `toml:"max_buffer_size"`
+	// MaxBufferSize uint32 `toml:"max_buffer_size"`
 
 }
 
@@ -26,7 +26,6 @@ type S3Output struct {
 	config *S3OutputConfig
 	client *s3.S3
 	bucket *s3.Bucket
-	stopChan chan bool
 }
 
 func (so *S3Output) ConfigStruct() interface{} {
@@ -52,50 +51,42 @@ func (so *S3Output) Init(config interface{}) (err error) {
 func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
-	so.stopChan = make(chan bool)
-	buf := make([]byte, so.config.MaxBufferSize * 1024)
-	buffer := bytes.NewBuffer(buf)
+	// buf := make([]byte, so.config.MaxBufferSize * 1024)
+	// buffer := bytes.NewBuffer(buf)
 
-	var pack *PipelinePack
-	var msg *message.Message
-// uploadLoop:
-	for {
+	var (
+		pack    *PipelinePack
+		msg     message.Message
+		buffer  bytes.Buffer
+		ok      = true
+	)
+
+	for ok {
 		select {
-		case <- so.stopChan:
-			or.LogMessage("shutting down AWS S3 output runner")
-			return
-		case <- tickerChan:
-			for pack = range inChan {
-				msg = pack.Message
-				_, err := buffer.Write([]byte(msg.GetPayload()))
-				if err != nil {
-					or.LogMessage(fmt.Sprintf("buffer full, uploading messages"))
-					err := so.Upload(buffer)
-					if err != nil {
-						or.LogMessage(fmt.Sprintf("warning, unable to upload payload when buffer is full: %s", err))
-						err = nil
-						continue
-					}
-					pack.Recycle()
-					break
-				}
-				pack.Recycle()
+		case pack, ok = <- inChan:
+			if !ok {
+				break
 			}
-			or.LogMessage(fmt.Sprintf("ticker's time up, uploading messages"))
+			msg = pack.Message
+			_, err := buffer.Write([]byte(msg.GetPayload()))
+			if err != nil {
+				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
+				err = nil
+				continue
+			}
+		case <- tickerChan:
+			or.LogMessage(fmt.Sprintf("ticker time's up, uploading messages"))
 			err := so.Upload(buffer)
 			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to upload payload after ticker: %s", err))
+				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
 				err = nil
 				continue
 			}
 		}
+		pack.Recycle()
 	}
-
-
-}
-
-func (so *S3Output) Stop() {
-	so.stopChan <- true
+	or.LogMessage(fmt.Sprintf("shutting down s3 output runner"))
+	return
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
