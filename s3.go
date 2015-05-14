@@ -52,11 +52,12 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
 	// buf := make([]byte, so.config.MaxBufferSize * 1024)
-	buffer := bytes.NewBuffer(nil)
+	// buffer := bytes.NewBuffer(buf)
 
 	var (
 		pack    *PipelinePack
 		msg     *message.Message
+		buffer  *bytes.Buffer
 		ok      = true
 	)
 
