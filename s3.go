@@ -56,8 +56,8 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 
 	var (
 		pack    *PipelinePack
-		msg     message.Message
-		buffer  bytes.Buffer
+		msg     *message.Message
+		buffer  *bytes.Buffer
 		ok      = true
 	)
 
