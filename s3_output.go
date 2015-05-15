@@ -19,6 +19,7 @@ type S3OutputConfig struct {
 	Bucket string `toml:"bucket"`
 	Prefix string `toml:"prefix"`
 	TickerInterval uint `toml:"ticker_interval"`
+	Compression bool `toml:"compression"`
 }
 
 type S3Output struct {
@@ -65,7 +66,6 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			or.LogMessage(fmt.Sprintf("Writing to buffer."))
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("Warning, unable to write to buffer: %s", err))
@@ -96,16 +96,22 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 		return
 	}
 
-	var buf bytes.Buffer
-	writer := gzip.NewWriter(&buf)
-	writer.Write(buffer.Bytes())
-	writer.Close()
-
 	currentTime := time.Now().Local().Format("20060102150405")
 	currentDate := time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
+	
+	if so.config.Compression { 	
+		var buf bytes.Buffer
+		writer := gzip.NewWriter(&buf)
+		writer.Write(buffer.Bytes())
+		writer.Close()
 
-	path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ".zip"
-	err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
+		path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ".zip"
+		err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
+	} else {
+		path := so.config.Prefix + "/" + currentDate + "/" + currentTime 
+		err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
+	}
+
 	return
 }
 
