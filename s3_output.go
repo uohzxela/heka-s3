@@ -104,7 +104,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	currentTime := time.Now().Local().Format("20060102150405")
 	currentDate := time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
 
-	path := so.config.Prefix + "/" + currentDate + "/" + t + ".zip"
+	path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ".zip"
 	err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
 	return
 }
