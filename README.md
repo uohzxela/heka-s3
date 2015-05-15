@@ -7,8 +7,8 @@ Sample TOML file (with Kafka as input source):
 ```
 [KafkaInput]
 type = "KafkaInput"
-topic = "asdf"
-addrs = ["kafka-staging-a-1.bezurk.org:9092"]
+topic = "error-logs"
+addrs = ["kafka-a-1.test.org:9092"]
 
 [output_s3]
 type = "S3Output"
