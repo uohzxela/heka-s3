@@ -25,4 +25,6 @@ compression = true
 [PayloadEncoder]
 append_newlines = false
 ```
-`ticker_interval` is in seconds and gzip is used for compression. The plugin will write messages to a buffer which will be uploaded to S3 at every tick. In this example, the S3 object will be saved to `/logs/error-logs/2015-05-18/20150515174140.zip`
+`ticker_interval` is in seconds and gzip is used for compression. The plugin will write messages to a buffer which will be uploaded to S3 at every tick. 
+
+In this example, the S3 object will be saved to `/logs/error-logs/2015-05-18/20150515174140.zip`
