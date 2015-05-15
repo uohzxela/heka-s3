@@ -16,11 +16,9 @@ type S3OutputConfig struct {
 	SecretKey string `toml:"secret_key"`
 	AccessKey string `toml:"access_key"`
 	Region string `toml:"region"`
-	BucketName string `toml:"bucket_name"`
-	PathName string `toml:"path_name"`
+	Bucket string `toml:"bucket"`
+	Prefix string `toml:"prefix"`
 	TickerInterval uint `toml:"ticker_interval"`
-	// MaxBufferSize uint32 `toml:"max_buffer_size"`
-
 }
 
 type S3Output struct {
@@ -45,14 +43,13 @@ func (so *S3Output) Init(config interface{}) (err error) {
 		return
 	}
 	so.client = s3.New(auth, region)
-	so.bucket = so.client.Bucket(so.config.BucketName)
+	so.bucket = so.client.Bucket(so.config.Bucket)
 	return
 }
 
 func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
-	// buf := make([]byte, so.config.MaxBufferSize * 1024)
 	buffer := bytes.NewBuffer(nil)
 
 	var (
@@ -68,33 +65,34 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			or.LogMessage(fmt.Sprintf("writing to buffer"))
+			or.LogMessage(fmt.Sprintf("Writing to buffer."))
 			_, err := buffer.Write([]byte(msg.GetPayload()))
 			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to write to buffer: %s", err))
+				or.LogMessage(fmt.Sprintf("Warning, unable to write to buffer: %s", err))
 				err = nil
 				continue
 			}
 			pack.Recycle()
 		case <- tickerChan:
-			or.LogMessage(fmt.Sprintf("ticker time's up, uploading payload"))
+			or.LogMessage(fmt.Sprintf("Ticker fired, uploading payload."))
 			err := so.Upload(buffer)
 			if err != nil {
-				or.LogMessage(fmt.Sprintf("warning, unable to upload payload: %s", err))
+				or.LogMessage(fmt.Sprintf("Warning, unable to upload payload: %s", err))
 				err = nil
 				continue
 			}
-			or.LogMessage(fmt.Sprintf("payload uploaded successfully"))
+			or.LogMessage(fmt.Sprintf("Payload uploaded successfully."))
 			buffer.Reset()
 		}
 	}
-	or.LogMessage(fmt.Sprintf("shutting down s3 output runner"))
+
+	or.LogMessage(fmt.Sprintf("Shutting down S3 output runner."))
 	return
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	if buffer.Len() == 0 {
-		err = errors.New("buffer is empty")
+		err = errors.New("Buffer is empty.")
 		return
 	}
 
@@ -102,9 +100,11 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 	writer := gzip.NewWriter(&buf)
 	writer.Write(buffer.Bytes())
 	writer.Close()
-	
-	t := time.Now().Local().Format("20060102150405")
-	path := so.config.PathName + "/" + t 
+
+	currentTime := time.Now().Local().Format("20060102150405")
+	currentDate := time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
+
+	path := so.config.Prefix + "/" currentDate + "/" + t + ".zip"
 	err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
 	return
 }
