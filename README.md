@@ -18,11 +18,11 @@ access_key = "access_key"
 bucket = "logs"
 prefix = "/error-logs"
 region = "ap-southeast-1"
-ticker_interval = 360
+ticker_interval = 3600
 encoder = "PayloadEncoder"
 compression = true
 
 [PayloadEncoder]
 append_newlines = false
 ```
-`ticker_interval` is in seconds and gzip is used for compression.
+`ticker_interval` is in seconds and gzip is used for compression. The plugin will write messages to a buffer which will be uploaded to S3 at every tick. In this example, the S3 object will be saved to `/logs/error-logs/2015-05-18/20150515174140.zip`
