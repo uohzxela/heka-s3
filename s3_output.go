@@ -105,7 +105,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
 		writer.Write(buffer.Bytes())
 		writer.Close()
 
-		path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ".zip"
+		path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ".gz"
 		err = so.bucket.Put(path, buf.Bytes(), "application/zip", "public-read")
 	} else {
 		path := so.config.Prefix + "/" + currentDate + "/" + currentTime 
