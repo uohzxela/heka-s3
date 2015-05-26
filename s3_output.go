@@ -16,22 +16,22 @@ import (
 )
 
 type S3OutputConfig struct {
-	SecretKey string `toml:"secret_key"`
-	AccessKey string `toml:"access_key"`
-	Region string `toml:"region"`
-	Bucket string `toml:"bucket"`
-	Prefix string `toml:"prefix"`
-	TickerInterval uint `toml:"ticker_interval"`
-	Compression bool `toml:"compression"`
-	BufferPath string  `toml:"buffer_path"`
-	BufferChunkLimit int  `toml:"buffer_chunk_limit"`
+	SecretKey 		string 	`toml:"secret_key"`
+	AccessKey 		string 	`toml:"access_key"`
+	Region 			string 	`toml:"region"`
+	Bucket 			string 	`toml:"bucket"`
+	Prefix 			string 	`toml:"prefix"`
+	TickerInterval 		uint 	`toml:"ticker_interval"`
+	Compression 		bool 	`toml:"compression"`
+	BufferPath 		string  `toml:"buffer_path"`
+	BufferChunkLimit 	int  	`toml:"buffer_chunk_limit"`
 }
 
 type S3Output struct {
-	config *S3OutputConfig
-	client *s3.S3
-	bucket *s3.Bucket
-	bufferFilePath string
+	config 		*S3OutputConfig
+	client 		*s3.S3
+	bucket 		*s3.Bucket
+	bufferFilePath 	string
 }
 
 func (so *S3Output) ConfigStruct() interface{} {
