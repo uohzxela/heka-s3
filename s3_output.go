@@ -42,9 +42,8 @@ func (so *S3Output) ConfigStruct() interface{} {
 func (so *S3Output) Init(config interface{}) (err error) {
 	so.config = config.(*S3OutputConfig)
 	auth, err := aws.GetAuth(so.config.AccessKey, so.config.SecretKey)
-	if err != nil {
-		return
-	}
+	if err != nil { return }
+	
 	region, ok := aws.Regions[so.config.Region]
 	if !ok {
 		err = errors.New("Region of that name not found.")
@@ -103,59 +102,46 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 
 func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or OutputRunner) (err error) {
 	_, err = buffer.Write([]byte(msg.GetPayload()))
-	if err != nil {
-		return
-	}
+	if err != nil { return }
+	
 	if buffer.Len() > so.config.BufferChunkLimit {
 		err = so.SaveToDisk(buffer, or)
 	}
+	
 	return
 }
 
 func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	var (
-		ok bool
-		f *os.File
-	)
-
-	if ok, err = exists(so.config.BufferPath); err != nil {
-		return err
-	}
+	ok, err := exists(so.config.BufferPath)
+	if err != nil { return err }
 
 	if !ok {
 	 	err = os.MkdirAll(so.config.BufferPath, 0666)
-		if err != nil {
-			return
-		}
+		if err != nil { return }
 	}
 
-	if err = os.Chdir(so.config.BufferPath); err != nil {
-		return
-	}
+	err = os.Chdir(so.config.BufferPath)
+	if err != nil { return }
 
-	if ok, err = exists(so.bufferFilePath); err != nil {
-		return
-	}
+	ok, err = exists(so.bufferFilePath)
+	if err != nil { return }
 
 	if !ok {
 		or.LogMessage("Creating buffer file: " +  so.bufferFilePath)
 		w, err := os.Create(so.bufferFilePath)
 		w.Close()
-		if err != nil {
-			return err
-		}
+		if err != nil { return err }
 	}
 	
-	// or.LogMessage("appending to buffer file")
-	if f, err = os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
-		return
-	}
-	if _, err = f.Write(buffer.Bytes()); err != nil {
-	    return
-	}
-	f.Close()
+	f, err := os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil { return }
 
+	_, err = f.Write(buffer.Bytes()) 
+	if err != nil { return }
+
+	f.Close()
 	buffer.Reset()
+
 	return
 }
 
@@ -167,13 +153,12 @@ func (so *S3Output) ReadFromDisk() (buffer *bytes.Buffer, err error) {
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	if err := so.SaveToDisk(buffer, or); err != nil {
-		return err
-	}
+	err = so.SaveToDisk(buffer, or)
+	if err != nil { return err }
+
 	or.LogMessage("Uploading, reading from buffer file.")
-	if buffer, err = so.ReadFromDisk(); err != nil {
-		return err
-	}
+	buffer, err = so.ReadFromDisk()
+	if err != nil { return err }
 
 	if buffer.Len() == 0 {
 		err = errors.New("Buffer is empty.")
