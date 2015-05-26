@@ -54,7 +54,7 @@ func (so *S3Output) Init(config interface{}) (err error) {
 	so.bucket = so.client.Bucket(so.config.Bucket)
 
 	prefixList := strings.Split(so.config.Prefix, "/")
-	bufferFileName := so.config.Bucket + "_" + strings.Join(prefixList, "_")
+	bufferFileName := so.config.Bucket + strings.Join(prefixList, "_")
 	so.bufferFilePath = so.config.BufferPath + "/" + bufferFileName
 	return
 }
@@ -113,10 +113,6 @@ func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or
 }
 
 func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	// TODO: save buffer to disk using buffer path (so.config.BufferPath)
-	// check if buffer/path/file exists, if not create it first
-	// append string to file
-
 	ok, err := exists(so.config.BufferPath)
 	if err != nil {
 		return
@@ -133,7 +129,7 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 	}
 	ok, err = exists(so.bufferFilePath)
 	if !ok {
-		or.LogMessage("creating buffer file: " +  so.bufferFilePath)
+		or.LogMessage("Creating buffer file: " +  so.bufferFilePath)
 		w, err := os.Create(so.bufferFilePath)
 		w.Close()
 		if err != nil {
@@ -143,6 +139,7 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 	if err != nil {
 		return
 	}
+	// or.LogMessage("appending to buffer file")
 	f, err := os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
@@ -167,6 +164,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	if err := so.SaveToDisk(buffer, or); err != nil {
 		return err
 	}
+	or.LogMessage("Uploading, reading from buffer file.")
 	if buffer, err = so.ReadFromDisk(); err != nil {
 		return err
 	}
@@ -191,7 +189,8 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 		path := so.config.Prefix + "/" + currentDate + "/" + currentTime 
 		err = so.bucket.Put(path, buffer.Bytes(), "text/plain", "public-read")
 	}
-	// TODO: if err is nil, remove buffer file on disk after upload
+
+	or.LogMessage("Upload finished, removing buffer file on disk.")
 	if err == nil {
 		err = os.Remove(so.bufferFilePath)
 	}
