@@ -7,7 +7,7 @@ import (
 	"time"
 	"os"
 	"strings"
-	"ioutil"
+	"io/ioutil"
 	"compress/gzip"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
