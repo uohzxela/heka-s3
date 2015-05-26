@@ -32,7 +32,7 @@ type S3Output struct {
 	config *S3OutputConfig
 	client *s3.S3
 	bucket *s3.Bucket
-	bufferFilePath string
+	bufferFileName string
 }
 
 func (so *S3Output) ConfigStruct() interface{} {
@@ -54,8 +54,7 @@ func (so *S3Output) Init(config interface{}) (err error) {
 	so.bucket = so.client.Bucket(so.config.Bucket)
 
 	prefixList := strings.Split(so.config.Prefix, "/")
-	bufferFileName := so.config.Bucket + strings.Join(prefixList, "_")
-	so.bufferFilePath = so.config.BufferPath + "/" + bufferFileName
+	so.bufferFileName = so.config.Bucket + strings.Join(prefixList, "_")
 	return
 }
 
@@ -133,13 +132,13 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 		return
 	}
 
-	if ok, err = exists(so.bufferFilePath); err != nil {
+	if ok, err = exists(so.bufferFileName); err != nil {
 		return
 	}
 
 	if !ok {
-		or.LogMessage("Creating buffer file: " +  so.bufferFilePath)
-		w, err := os.Create(so.bufferFilePath)
+		or.LogMessage("Creating buffer file: " +  so.bufferFileName)
+		w, err := os.Create(so.bufferFileName)
 		w.Close()
 		if err != nil {
 			return err
@@ -147,7 +146,7 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 	}
 	
 	// or.LogMessage("appending to buffer file")
-	if f, err = os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
+	if f, err = os.OpenFile(so.bufferFileName, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
 		return
 	}
 	if _, err = f.Write(buffer.Bytes()); err != nil {
@@ -160,7 +159,8 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 }
 
 func (so *S3Output) ReadFromDisk() (buffer *bytes.Buffer, err error) {
-	buf, err := ioutil.ReadFile(so.bufferFilePath)
+	bufferFilePath := so.config.BufferPath + "/" + so.bufferFileName
+	buf, err := ioutil.ReadFile(bufferFilePath)
 	buffer = bytes.NewBuffer(buf)
 
 	return buffer, err
@@ -197,8 +197,9 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	}
 
 	or.LogMessage("Upload finished, removing buffer file on disk.")
+	bufferFilePath := so.config.BufferPath + "/" + so.bufferFileName
 	if err == nil {
-		err = os.Remove(so.bufferFilePath)
+		err = os.Remove(bufferFilePath)
 	}
 
 	return
