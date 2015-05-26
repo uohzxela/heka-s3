@@ -25,7 +25,6 @@ type S3OutputConfig struct {
 	Compression bool `toml:"compression"`
 	BufferPath string  `toml:"buffer_path"`
 	BufferChunkLimit int  `toml:"buffer_chunk_limit"`
-	
 }
 
 type S3Output struct {
@@ -49,12 +48,14 @@ func (so *S3Output) Init(config interface{}) (err error) {
 		err = errors.New("Region of that name not found.")
 		return
 	}
+	
 	so.client = s3.New(auth, region)
 	so.bucket = so.client.Bucket(so.config.Bucket)
 
 	prefixList := strings.Split(so.config.Prefix, "/")
 	bufferFileName := so.config.Bucket + strings.Join(prefixList, "_")
 	so.bufferFilePath = so.config.BufferPath + "/" + bufferFileName
+	
 	return
 }
 
@@ -107,13 +108,12 @@ func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or
 	if buffer.Len() > so.config.BufferChunkLimit {
 		err = so.SaveToDisk(buffer, or)
 	}
-	
 	return
 }
 
 func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	ok, err := exists(so.config.BufferPath)
-	if err != nil { return err }
+	if err != nil { return }
 
 	if !ok {
 	 	err = os.MkdirAll(so.config.BufferPath, 0666)
@@ -148,17 +148,16 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 func (so *S3Output) ReadFromDisk() (buffer *bytes.Buffer, err error) {
 	buf, err := ioutil.ReadFile(so.bufferFilePath)
 	buffer = bytes.NewBuffer(buf)
-
 	return buffer, err
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	err = so.SaveToDisk(buffer, or)
-	if err != nil { return err }
+	if err != nil { return }
 
 	or.LogMessage("Uploading, reading from buffer file.")
 	buffer, err = so.ReadFromDisk()
-	if err != nil { return err }
+	if err != nil { return }
 
 	if buffer.Len() == 0 {
 		err = errors.New("Buffer is empty.")
