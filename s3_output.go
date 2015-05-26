@@ -113,21 +113,30 @@ func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or
 }
 
 func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	ok, err := exists(so.config.BufferPath)
-	if err != nil {
-		return
+	var (
+		ok bool
+		f *os.File
+	)
+
+	if ok, err = exists(so.config.BufferPath); err != nil {
+		return err
 	}
+
 	if !ok {
 	 	err = os.MkdirAll(so.config.BufferPath, 0666)
 		if err != nil {
 			return
 		}
 	}
-	err = os.Chdir(so.config.BufferPath)
-	if err != nil {
+
+	if err = os.Chdir(so.config.BufferPath); err != nil {
 		return
 	}
-	ok, err = exists(so.bufferFilePath)
+
+	if ok, err = exists(so.bufferFilePath); err != nil {
+		return
+	}
+
 	if !ok {
 		or.LogMessage("Creating buffer file: " +  so.bufferFilePath)
 		w, err := os.Create(so.bufferFilePath)
@@ -136,13 +145,10 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 			return err
 		}
 	}
-	if err != nil {
-		return
-	}
+	
 	// or.LogMessage("appending to buffer file")
-	f, err := os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		return err
+	if f, err = os.OpenFile(so.bufferFilePath, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
+		return
 	}
 	if _, err = f.Write(buffer.Bytes()); err != nil {
 	    return
