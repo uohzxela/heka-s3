@@ -77,7 +77,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 				break
 			}
 			msg = pack.Message
-			err := so.WriteToBuffer(buffer, msg)
+			err := so.WriteToBuffer(buffer, msg, or)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("Warning, unable to write to buffer: %s", err))
 				err = nil
@@ -86,7 +86,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			pack.Recycle()
 		case <- tickerChan:
 			or.LogMessage(fmt.Sprintf("Ticker fired, uploading payload."))
-			err := so.Upload(buffer)
+			err := so.Upload(buffer, or)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("Warning, unable to upload payload: %s", err))
 				err = nil
@@ -101,30 +101,44 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	return
 }
 
-func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message) (err error) {
+func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or OutputRunner) (err error) {
 	_, err = buffer.Write([]byte(msg.GetPayload()))
 	if err != nil {
 		return
 	}
 	if buffer.Len() > so.config.BufferChunkLimit {
-		err = so.SaveToDisk(buffer)
+		err = so.SaveToDisk(buffer, or)
 	}
 	return
 }
 
-func (so *S3Output) SaveToDisk(buffer *bytes.Buffer) (err error) {
+func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	// TODO: save buffer to disk using buffer path (so.config.BufferPath)
 	// check if buffer/path/file exists, if not create it first
 	// append string to file
 
-	// if ok, err := exists(so.config.BufferPath); !ok {
-	// 	os.Mkdir(so.config.BufferPath, 0644)
-	// }
-	
-	ok, err := exists(so.bufferFilePath)
+	ok, err := exists(so.config.BufferPath)
+	if err != nil {
+		return
+	}
 	if !ok {
-		w, _ := os.Create(so.bufferFilePath)
+	 	err = os.MkdirAll(so.config.BufferPath, 0666)
+		if err != nil {
+			return
+		}
+	}
+	err = os.Chdir(so.config.BufferPath)
+	if err != nil {
+		return
+	}
+	ok, err = exists(so.bufferFilePath)
+	if !ok {
+		or.LogMessage("creating buffer file: " +  so.bufferFilePath)
+		w, err := os.Create(so.bufferFilePath)
 		w.Close()
+		if err != nil {
+			return err
+		}
 	}
 	if err != nil {
 		return
@@ -149,8 +163,8 @@ func (so *S3Output) ReadFromDisk() (buffer *bytes.Buffer, err error) {
 	return buffer, err
 }
 
-func (so *S3Output) Upload(buffer *bytes.Buffer) (err error) {
-	if err := so.SaveToDisk(buffer); err != nil {
+func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
+	if err := so.SaveToDisk(buffer, or); err != nil {
 		return err
 	}
 	if buffer, err = so.ReadFromDisk(); err != nil {
