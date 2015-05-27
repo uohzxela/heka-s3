@@ -12,7 +12,7 @@ addrs = ["kafka-a-1.test.org:9092"]
 
 [error-logs-output-s3]
 type = "S3Output"
-message_matcher = "TRUE"
+message_matcher = "Logger == 'error-logs-input-kafka'"
 secret_key = "secret_key"
 access_key = "access_key"
 bucket = "logs"
