@@ -147,8 +147,8 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 }
 
 func (so *S3Output) ReadFromDisk(or OutputRunner) (buffer *bytes.Buffer, err error) {
-	or.LogMessage("Compressing buffer file...")
 	if so.config.Compression {
+		or.LogMessage("Compressing buffer file...")
 		// execute gzip command
 		cmd := exec.Command("gzip", so.bufferFilePath)
 		err = cmd.Run()
