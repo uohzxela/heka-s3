@@ -190,16 +190,16 @@ func (so *S3Output) ReadFromDisk(or OutputRunner) (buffer *bytes.Buffer, err err
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
+	if buffer.Len() == 0 {
+		err = errors.New("Buffer is empty.")
+		return
+	}
+	
 	err = so.SaveToDisk(buffer, or)
 	if err != nil { return }
 	
 	buffer, err = so.ReadFromDisk(or)
 	if err != nil { return }
-
-	if buffer.Len() == 0 {
-		err = errors.New("Buffer is empty.")
-		return
-	}
 
 	currentTime := time.Now().Local().Format("20060102150405")
 	currentDate := time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
