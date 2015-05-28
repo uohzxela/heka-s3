@@ -113,10 +113,8 @@ func (so *S3Output) WriteToBuffer(buffer *bytes.Buffer, msg *message.Message, or
 }
 
 func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	ok, err := exists(so.config.BufferPath)
-	if err != nil { return }
-
-	if !ok {
+	_, err = os.Stat(so.config.BufferPath)
+	if os.IsNotExist(err) {
 	 	err = os.MkdirAll(so.config.BufferPath, 0666)
 		if err != nil { return }
 	}
@@ -124,10 +122,8 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 	err = os.Chdir(so.config.BufferPath)
 	if err != nil { return }
 
-	ok, err = exists(so.bufferFilePath)
-	if err != nil { return }
-
-	if !ok {
+	_, err = os.Stat(so.bufferFilePath)
+	if os.IsNotExist(err) {
 		or.LogMessage("Creating buffer file: " +  so.bufferFilePath)
 		w, err := os.Create(so.bufferFilePath)
 		w.Close()
@@ -149,7 +145,6 @@ func (so *S3Output) SaveToDisk(buffer *bytes.Buffer, or OutputRunner) (err error
 func (so *S3Output) ReadFromDisk(or OutputRunner) (buffer *bytes.Buffer, err error) {
 	if so.config.Compression {
 		or.LogMessage("Compressing buffer file...")
-		// execute gzip command
 		cmd := exec.Command("gzip", so.bufferFilePath)
 		err = cmd.Run()
 		if err != nil { 
@@ -190,11 +185,12 @@ func (so *S3Output) ReadFromDisk(or OutputRunner) (buffer *bytes.Buffer, err err
 }
 
 func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
-	if buffer.Len() == 0 {
-		err = errors.New("Buffer is empty.")
+	_, err = os.Stat(so.bufferFilePath)
+	if buffer.Len() == 0 && os.IsNotExist(err) {
+		err = errors.New("Nothing to upload.")
 		return
 	}
-	
+
 	err = so.SaveToDisk(buffer, or)
 	if err != nil { return }
 	
@@ -221,13 +217,6 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	}
 
 	return
-}
-
-func exists(path string) (bool, error) {
-    _, err := os.Stat(path)
-    if err == nil { return true, nil }
-    if os.IsNotExist(err) { return false, nil }
-    return false, err
 }
 
 func init() {
