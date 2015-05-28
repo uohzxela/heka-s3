@@ -36,7 +36,7 @@ type S3Output struct {
 }
 
 func (so *S3Output) ConfigStruct() interface{} {
-	return &S3OutputConfig{}
+	return &S3OutputConfig{Compression: true, BufferChunkLimit: 1000000}
 }
 
 func (so *S3Output) Init(config interface{}) (err error) {
