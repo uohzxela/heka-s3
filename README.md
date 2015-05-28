@@ -31,7 +31,7 @@ region = "ap-southeast-1"
 ticker_interval = 3600
 compression = true
 buffer_path = "/var/log/heka/buffer/s3"
-buffer_chunk_limit = 102400
+buffer_chunk_limit = 1000000
 encoder = "PayloadEncoder"
 
 [PayloadEncoder]
@@ -48,7 +48,7 @@ append_newlines = false
 | ticker_interval   | int (seconds) |   nil   | specifies buffering time before every upload |
 | compression       | boolean       |   true  | only gzip is supported for now |
 | buffer_path       | string        |   nil   | defines path to store buffer file locally |
-| buffer_chunk_limit| int (bytes)   |   10000 | defines buffer size limit in memory before flushing to disk|
+| buffer_chunk_limit| int (bytes)   | 1000000 | defines buffer size limit in memory before flushing to disk|
 
 Logs are saved to S3 as _{bucket}/{prefix}/{current date}/{current time stamp}.gz_, if compression is enabled.
 
