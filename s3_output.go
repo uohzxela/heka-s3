@@ -110,7 +110,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			}
 			or.LogMessage(fmt.Sprintf("Payload uploaded successfully."))
 			buffer.Reset()
-		case <- midnightTicker:
+		case <- midnightTicker.C:
 			midnightTicker = midnightTicker()
 			or.LogMessage(fmt.Sprintf("Midnight ticker fired, uploading payload."))
 			err := so.Upload(buffer, or)
