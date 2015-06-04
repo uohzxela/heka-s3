@@ -41,7 +41,7 @@ type S3Output struct {
 	bufferFilePath string
 }
 
-func midnightTicker() *time.Ticker {
+func midnightTickerUpdate() *time.Ticker {
 	nextTick := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), HOUR_TO_TICK, MINUTE_TO_TICK, SECOND_TO_TICK, 0, time.Local)
 	if !nextTick.After(time.Now()) {
 		nextTick = nextTick.Add(INTERVAL_PERIOD)
@@ -78,7 +78,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 	inChan := or.InChan()
 	tickerChan := or.Ticker()
 	buffer := bytes.NewBuffer(nil)
-    midnightTicker := midnightTicker()
+    	midnightTicker := midnightTickerUpdate()
 
 	var (
 		pack    *PipelinePack
@@ -111,7 +111,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			or.LogMessage(fmt.Sprintf("Payload uploaded successfully."))
 			buffer.Reset()
 		case <- midnightTicker.C:
-			midnightTicker = midnightTicker()
+			midnightTicker = midnightTickerUpdate()
 			or.LogMessage(fmt.Sprintf("Midnight ticker fired, uploading payload."))
 			err := so.Upload(buffer, or)
 			if err != nil {
