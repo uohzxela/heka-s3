@@ -17,7 +17,6 @@ import (
 )
 
 const INTERVAL_PERIOD time.Duration = 24 * time.Hour
-
 const HOUR_TO_TICK int = 00
 const MINUTE_TO_TICK int = 00
 const SECOND_TO_TICK int = 00
@@ -102,7 +101,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 			pack.Recycle()
 		case <- tickerChan:
 			or.LogMessage(fmt.Sprintf("Ticker fired, uploading payload."))
-			err := so.Upload(buffer, or)
+			err := so.Upload(buffer, or, false)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("Warning, unable to upload payload: %s", err))
 				err = nil
@@ -113,7 +112,7 @@ func (so *S3Output) Run(or OutputRunner, h PluginHelper) (err error) {
 		case <- midnightTicker.C:
 			midnightTicker = midnightTickerUpdate()
 			or.LogMessage(fmt.Sprintf("Midnight ticker fired, uploading payload."))
-			err := so.Upload(buffer, or)
+			err := so.Upload(buffer, or, true)
 			if err != nil {
 				or.LogMessage(fmt.Sprintf("Warning, unable to upload payload: %s", err))
 				err = nil
@@ -211,7 +210,7 @@ func (so *S3Output) ReadFromDisk(or OutputRunner) (buffer *bytes.Buffer, err err
 	return buffer, err
 }
 
-func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
+func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner, isMidnight bool) (err error) {
 	_, err = os.Stat(so.bufferFilePath)
 	if buffer.Len() == 0 && os.IsNotExist(err) {
 		err = errors.New("Nothing to upload.")
@@ -224,12 +223,19 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner) (err error) {
 	buffer, err = so.ReadFromDisk(or)
 	if err != nil { return }
 
-	currentTime := time.Now().Local().Format("20060102150405")
-	currentDate := time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
-	
-	ext := ""
-	contentType := "text/plain"
+	var (
+		currentTime = time.Now().Local().Format("20060102150405")
+		currentDate = ""
+		ext = ""
+		contentType = "text/plain"
+	)
 
+	if isMidnight {
+		currentDate = time.Now().Local().AddDate(0, 0, -1).Format("2006-01-02 15:00:00 +0800")[0:10]
+	} else {
+		currentDate = time.Now().Local().Format("2006-01-02 15:00:00 +0800")[0:10]
+	}
+	
 	if so.config.Compression {
 		ext = ".gz"
 		contentType = "multipart/x-gzip"
