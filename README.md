@@ -1,6 +1,6 @@
 # heka-s3
 
-Heka output plugin for persisting messages from the data pipeline to AWS S3 buckets. It buffers logs to disk locally and uploads periodically to S3.
+Heka output plugin for persisting messages from the data pipeline to AWS S3 buckets. It buffers logs to disk locally and uploads periodically to S3. It is currently running reliably in production at [Wego](http://www.wego.com).
 
 ## Installation
 
@@ -53,6 +53,8 @@ append_newlines = false
 Logs are saved to S3 as _{bucket}/{prefix}/{current date}/{current time stamp}.gz_, if compression is enabled.
 
 In this example, an S3 object will be saved hourly as `All Buckets/logs/error-logs/2015-05-18/20150518174140.gz`
+
+Regardless of the ticker_interval, buffer on the local disk is automatically uploaded by midnight to the previous day's folder so as to deal with timestamp issue.
 
 ## Contributing
 
