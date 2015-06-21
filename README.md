@@ -10,6 +10,8 @@ Simply add the repo URL in _{heka root}/cmake/plugin_loader.cmake_:
 
     add_external_plugin(git https://github.com/uohzxela/heka-s3 master)
 
+Then run build.sh as per the doc.
+
 ## Configuration
 
 Sample TOML file (with Kafka as input source):
