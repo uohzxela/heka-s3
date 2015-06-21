@@ -6,11 +6,11 @@ Heka output plugin for persisting messages from the data pipeline to AWS S3 buck
 
 Refer to: http://hekad.readthedocs.org/en/v0.9.2/installing.html#building-hekad-with-external-plugins
 
-Simply add the repo URL in _{heka root}/cmake/plugin_loader.cmake_:
+Simply add this line in _{heka root}/cmake/plugin_loader.cmake_:
 
     add_external_plugin(git https://github.com/uohzxela/heka-s3 master)
 
-Then run build.sh as per the doc.
+Then run build.sh as per the documentation.
 
 ## Configuration
 
