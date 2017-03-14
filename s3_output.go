@@ -12,8 +12,8 @@ import (
 	"strings"
 	"github.com/mozilla-services/heka/message"
 	. "github.com/mozilla-services/heka/pipeline"
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/AdRoll/goamz/aws"
+	"github.com/AdRoll/goamz/s3"
 )
 
 const INTERVAL_PERIOD time.Duration = 24 * time.Hour
