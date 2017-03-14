@@ -1,3 +1,39 @@
+# Warning
+
+This version was changed to be possible use with the latest heka code base (dev branch)
+
+1. You should include the line `add_external_plugin(git https://github.com/jpereira/heka-s3 master)` before the `include(plugin_loader OPTIONAL)`, the result should be:
+
+```
+chessus@vagrant-ubuntu-trusty-64:~/heka$ git status
+On branch dev
+Your branch is up-to-date with 'origin/dev'.
+
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	modified:   cmake/externals.cmake
+
+chessus@vagrant-ubuntu-trusty-64:~/heka$ git diff HEAD
+diff --git a/cmake/externals.cmake b/cmake/externals.cmake
+index 213f6c6..a1eb48b 100644
+--- a/cmake/externals.cmake
++++ b/cmake/externals.cmake
+@@ -197,6 +197,9 @@ git_clone(https://github.com/gogo/protobuf 7d21ffbc76b992157ec7057b69a1529735fba
+ add_custom_command(TARGET protobuf POST_BUILD
+ COMMAND ${GO_EXECUTABLE} install github.com/gogo/protobuf/protoc-gen-gogo)
+ 
++# heka-s3
++add_external_plugin(git https://github.com/jpereira/heka-s3 master)
++
+ include(plugin_loader OPTIONAL)
+ 
+ if (PLUGIN_LOADER)
+chessus@vagrant-ubuntu-trusty-64:~/heka$ 
+```
+
+2. if you're building the heka using the golang >= 1.6, you should declare `export GODEBUG="cgocheck=0"` first of run the `hekad`
+
 # heka-s3
 
 Heka output plugin for persisting messages from the data pipeline to AWS S3 buckets. It buffers logs to disk locally and uploads periodically to S3. It is currently running reliably in production at [Wego](http://www.wego.com).
