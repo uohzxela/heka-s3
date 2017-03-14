@@ -55,7 +55,7 @@ func (so *S3Output) ConfigStruct() interface{} {
 
 func (so *S3Output) Init(config interface{}) (err error) {
 	so.config = config.(*S3OutputConfig)
-	auth, err := aws.GetAuth(so.config.AccessKey, so.config.SecretKey)
+	auth, err := aws.GetAuth(so.config.AccessKey, so.config.SecretKey, "", time.Now())
 	if err != nil {
 		return
 	}
@@ -242,7 +242,7 @@ func (so *S3Output) Upload(buffer *bytes.Buffer, or OutputRunner, isMidnight boo
 	}
 
 	path := so.config.Prefix + "/" + currentDate + "/" + currentTime + ext
-	err = so.bucket.Put(path, buffer.Bytes(), contentType, "public-read")
+	err = so.bucket.Put(path, buffer.Bytes(), contentType, "public-read", s3.Options{})
 
 	or.LogMessage("Upload finished, removing buffer file on disk.")
 	if err == nil {
